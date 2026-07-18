@@ -85,7 +85,7 @@ export default function OnboardingScreen() {
       <View className="px-6 pb-8">
         <Pressable
           className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.push("/(auth)/sign-up")}
         >
           <Text className="text-body-lg font-semibold text-white mr-2">
             Get Started
