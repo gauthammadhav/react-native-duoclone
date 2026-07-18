@@ -8,6 +8,24 @@
       ],
       "@/assets/*": [
         "./assets/*"
+      ],
+      "@/theme": [
+        "./src/theme/index.ts"
+      ],
+      "@/theme/*": [
+        "./src/theme/*"
+      ],
+      "@/tw": [
+        "./src/tw/index.tsx"
+      ],
+      "@/tw/*": [
+        "./src/tw/*"
+      ],
+      "@/hooks": [
+        "./src/hooks/index.ts"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
       ]
     }
   },
@@ -15,6 +33,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

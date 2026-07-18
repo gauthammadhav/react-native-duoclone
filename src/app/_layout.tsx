@@ -1,18 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import "../../global.css";
+import { Stack } from "expo-router";
+import { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { usePoppins } from "@/hooks/usePoppins";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-
+// Keep the splash screen visible while fonts are loading
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
-  );
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = usePoppins();
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Don't render anything until fonts are ready
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  return <Stack />;
 }

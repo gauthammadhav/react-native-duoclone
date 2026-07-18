@@ -1,0 +1,129 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * Lingua — Global CSS
+ * NativeWind v5 / Tailwind CSS v4
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+/* ─── Design Tokens via @theme ─────────────────────────────────────────── */
+@layer theme {
+  @theme {
+
+    /* ── Fonts ──────────────────────────────────────────────────── */
+    --font-sans:     "Poppins-Regular",  system-ui, sans-serif;
+    --font-medium:   "Poppins-Medium",   system-ui, sans-serif;
+    --font-semibold: "Poppins-SemiBold", system-ui, sans-serif;
+    --font-bold:     "Poppins-Bold",     system-ui, sans-serif;
+
+    /* ── Brand Colors ──────────────────────────────────────────── */
+    --color-primary:      #6C4EF5; /* bg-primary       */
+    --color-primary-deep: #5B3BF6; /* bg-primary-deep  */
+    --color-blue:         #4D8BFF; /* bg-blue          */
+    --color-green:        #21C16B; /* bg-green         */
+
+    /* ── Semantic Colors ──────────────────────────────────────────────── */
+    --color-success: #21C16B;
+    --color-warning: #FFC800;
+    --color-streak: #FF8A00;
+    --color-error: #FF4D4F;
+    --color-info: #4D8BFF;
+
+    /* ── Neutrals ──────────────────────────────────────────────── */
+    --color-fg:         #0D132B; /* text-fg          */
+    --color-muted:      #6B7280; /* text-muted        */
+    --color-border:     #E5E7EB; /* border-border     */
+    --color-surface:    #F6F7FB; /* bg-surface        */
+    --color-background: #FFFFFF; /* bg-background     */
+
+    /* ── Font Sizes (matches design scale) ───────────────────────────── */
+    --text-h1: 2rem;           /* 32px  Bold       leading-tight  */
+    --text-h2: 1.5rem;         /* 24px  SemiBold   leading-snug   */
+    --text-h3: 1.25rem;        /* 20px  SemiBold   leading-snug   */
+    --text-h4: 1rem;           /* 16px  Medium     leading-normal */
+    --text-body-lg: 1rem;      /* 16px  Regular    leading-relaxed */
+    --text-body-md: 0.875rem;  /* 14px  Regular    leading-relaxed */
+    --text-body-sm: 0.8125rem; /* 13px  Regular    leading-relaxed */
+    --text-caption: 0.6875rem; /* 11px  Regular    leading-normal */
+
+    /* ── Border Radius ────────────────────────────────────────────────── */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+
+    /* ── Spacing (base-4 scale) ───────────────────────────────────────── */
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-5: 20px;
+    --spacing-6: 24px;
+    --spacing-7: 28px;
+    --spacing-8: 32px;
+    --spacing-10: 40px;
+    --spacing-12: 48px;
+    --spacing-16: 64px;
+  }
+}
+
+/* ─── Platform-Specific Font Families ──────────────────────────────────── */
+@media ios {
+  :root {
+    --font-mono: ui-monospace;
+    --font-serif: ui-serif;
+    --font-sans: "Poppins-Regular", system-ui, sans-serif;
+    --font-rounded: ui-rounded;
+  }
+}
+
+@media android {
+  :root {
+    --font-mono: monospace;
+    --font-serif: serif;
+    --font-sans: "Poppins-Regular", sans-serif;
+    --font-rounded: normal;
+  }
+}
+
+/* ─── BEM Utility Classes ───────────────────────────────────────────────── */
+
+/* btn — base button utility */
+.btn {
+  @apply rounded-xl items-center justify-center px-6 py-3;
+}
+
+.btn--primary {
+  @apply bg-primary;
+}
+
+.btn--secondary {
+  @apply bg-surface border border-border;
+}
+
+.btn--success {
+  @apply bg-success;
+}
+
+.btn--danger {
+  @apply bg-error;
+}
+
+/* card — base card utility */
+.card {
+  @apply bg-background rounded-xl border border-border;
+}
+
+.card--surface {
+  @apply bg-surface rounded-xl;
+}
+
+.card--elevated {
+  @apply bg-background rounded-xl;
+}
+
