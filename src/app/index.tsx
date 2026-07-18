@@ -1,20 +1,27 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, Pressable } from "@/tw";
-import { useRouter } from "expo-router";
+import { useAuth, useUser } from "@clerk/expo";
 
 export default function Index() {
-  const router = useRouter();
+  const { signOut } = useAuth();
+  const { user } = useUser();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <View className="flex-1 items-center justify-center gap-6">
-        <Text className="text-h1 font-bold text-primary">Voca</Text>
+      <View className="flex-1 items-center justify-center p-6 gap-6">
+        <Text className="text-display font-bold text-primary text-center mb-2">
+          Voca
+        </Text>
+        <Text className="text-body-lg text-muted text-center max-w-sm mb-6">
+          Welcome back, {user?.primaryEmailAddress?.emailAddress || "Learner"}!
+        </Text>
+        
         <Pressable
-          className="bg-primary rounded-2xl px-8 py-4"
-          onPress={() => router.push("/onboarding")}
+          className="bg-primary rounded-2xl px-8 py-4 w-full items-center"
+          onPress={() => signOut()}
         >
           <Text className="text-body-lg font-semibold text-white">
-            Go to Onboarding
+            Sign Out
           </Text>
         </Pressable>
       </View>

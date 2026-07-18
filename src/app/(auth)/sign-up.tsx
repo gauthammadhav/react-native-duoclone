@@ -1,26 +1,98 @@
 import { useState, useRef } from "react";
-import { TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, Pressable } from "@/tw";
 import { useRouter } from "expo-router";
 import { images } from "@/constants/images";
 import VerificationModal from "@/components/VerificationModal";
+import { useSignUp, useAuth, useSSO } from "@clerk/expo";
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { signUp, errors, fetchStatus } = useSignUp();
+  const { isSignedIn } = useAuth();
+  const { startSSOFlow } = useSSO();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const isLoading = fetchStatus === 'fetching';
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
-  const handleSignUp = () => {
-    if (email.trim() && password.trim()) {
+  const handleSignUp = async () => {
+    if (!email.trim() || !password.trim()) return;
+    
+    setErrorMsg("");
+    
+    try {
+      const { error } = await signUp.password({
+        emailAddress: email,
+        password,
+      });
+
+      if (error) {
+        console.error(JSON.stringify(error, null, 2));
+        setErrorMsg(error.errors?.[0]?.longMessage || error.errors?.[0]?.message || error.message || "An error occurred");
+        return;
+      }
+
+      await signUp.verifications.sendEmailCode();
       setShowModal(true);
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      setErrorMsg(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "An error occurred");
     }
   };
+
+  const handleVerify = async (code: string) => {
+    try {
+      await signUp.verifications.verifyEmailCode({
+        code,
+      });
+
+      if (signUp.status === 'complete') {
+        await signUp.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            if (session?.currentTask) {
+              console.log(session?.currentTask);
+              return;
+            }
+            router.push("/");
+          },
+        });
+        setShowModal(false);
+      } else {
+        throw new Error("Verification failed. Please try again.");
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      throw new Error(err.errors?.[0]?.message || err.message || "Verification failed");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { createdSessionId, setActive, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+      });
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (err) {
+      console.error("Google sign in error:", JSON.stringify(err, null, 2));
+    }
+  };
+
+  if (signUp.status === 'complete' || isSignedIn) {
+    return null;
+  }
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -60,10 +132,11 @@ export default function SignUpScreen() {
                 placeholder="alex@gmail.com"
                 placeholderTextColor="#9CA3AF" // text-gray-400
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => { setEmail(text); setErrorMsg(""); }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
             </Pressable>
 
@@ -76,10 +149,11 @@ export default function SignUpScreen() {
                   placeholder="••••••••"
                   placeholderTextColor="#9CA3AF"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => { setPassword(text); setErrorMsg(""); }}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  editable={!isLoading}
                 />
                 <Pressable onPress={() => setShowPassword(!showPassword)} className="p-1">
                   <Text className="text-muted font-bold">{showPassword ? "👁️‍🗨️" : "👁️"}</Text>
@@ -87,11 +161,20 @@ export default function SignUpScreen() {
               </View>
             </Pressable>
 
+            {errorMsg ? (
+              <Text className="text-error mt-2">{errorMsg}</Text>
+            ) : null}
+
             <Pressable 
-              className="bg-primary rounded-2xl py-4 items-center mt-2"
+              className={`bg-primary rounded-2xl py-4 items-center mt-2 ${isLoading ? 'opacity-70' : ''}`}
               onPress={handleSignUp}
+              disabled={isLoading}
             >
-              <Text className="text-body-lg font-bold text-white">Sign Up</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-body-lg font-bold text-white">Sign Up</Text>
+              )}
             </Pressable>
           </View>
 
@@ -104,7 +187,10 @@ export default function SignUpScreen() {
 
           {/* Social Auth */}
           <View className="px-6 space-y-4 pb-12">
-            <Pressable style={styles.socialButton}>
+            <Pressable 
+              style={styles.socialButton}
+              onPress={handleGoogleSignIn}
+            >
               <Text style={styles.socialIcon}>G</Text>
               <Text className="text-body-md font-semibold text-fg">Continue with Google</Text>
             </Pressable>
@@ -132,6 +218,7 @@ export default function SignUpScreen() {
         visible={showModal}
         onClose={() => setShowModal(false)}
         email={email}
+        onVerify={handleVerify}
       />
     </SafeAreaView>
   );

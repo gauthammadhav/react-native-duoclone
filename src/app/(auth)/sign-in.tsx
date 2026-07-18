@@ -1,21 +1,82 @@
 import { useState, useRef } from "react";
-import { TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, Pressable } from "@/tw";
 import { useRouter } from "expo-router";
 import { images } from "@/constants/images";
 import VerificationModal from "@/components/VerificationModal";
+import { useSignIn, useSSO } from "@clerk/expo";
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { signIn, errors, fetchStatus } = useSignIn();
+  
   const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const emailRef = useRef<TextInput>(null);
 
-  const handleSignIn = () => {
-    if (email.trim()) {
+  const isLoading = fetchStatus === 'fetching';
+
+  const handleSignIn = async () => {
+    if (!email.trim()) return;
+
+    setErrorMsg("");
+
+    try {
+      // Create the sign-in attempt and send the email code
+      const { error } = await signIn.emailCode.sendCode({
+        emailAddress: email,
+      });
+
+      if (error) {
+        console.error(JSON.stringify(error, null, 2));
+        setErrorMsg(error.errors?.[0]?.longMessage || error.errors?.[0]?.message || error.message || "An error occurred");
+        return;
+      }
+
       setShowModal(true);
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      setErrorMsg(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "An error occurred");
+    }
+  };
+
+  const handleVerify = async (code: string) => {
+    try {
+      await signIn.emailCode.verifyCode({ code });
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            if (session?.currentTask) return;
+            router.push("/");
+          },
+        });
+        setShowModal(false);
+      } else {
+        throw new Error("Verification failed. Please try again.");
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      throw new Error(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "An error occurred");
+    }
+  };
+
+  const { startSSOFlow } = useSSO();
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { createdSessionId, setActive, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+      });
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (err) {
+      console.error("Google sign in error:", JSON.stringify(err, null, 2));
     }
   };
 
@@ -57,18 +118,28 @@ export default function SignInScreen() {
                 placeholder="alex@gmail.com"
                 placeholderTextColor="#9CA3AF"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => { setEmail(text); setErrorMsg(""); }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
             </Pressable>
 
+            {errorMsg ? (
+              <Text className="text-error mt-2">{errorMsg}</Text>
+            ) : null}
+
             <Pressable 
-              className="bg-primary rounded-2xl py-4 items-center mt-2"
+              className={`bg-primary rounded-2xl py-4 items-center mt-2 ${isLoading ? 'opacity-70' : ''}`}
               onPress={handleSignIn}
+              disabled={isLoading}
             >
-              <Text className="text-body-lg font-bold text-white">Sign In</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-body-lg font-bold text-white">Continue</Text>
+              )}
             </Pressable>
           </View>
 
@@ -80,18 +151,29 @@ export default function SignInScreen() {
           </View>
 
           {/* Social Auth */}
-          <View className="px-6 space-y-4 pb-12">
-            <Pressable style={styles.socialButton}>
+          <View className="px-6 pb-8 space-y-4">
+            <Pressable 
+              className="flex-row items-center justify-center bg-white border border-border rounded-2xl py-4"
+              onPress={handleGoogleSignIn}
+            >
               <Text style={styles.socialIcon}>G</Text>
-              <Text className="text-body-md font-semibold text-fg">Continue with Google</Text>
+              <Text className="text-body-lg font-bold text-fg ml-3">
+                Continue with Google
+              </Text>
             </Pressable>
-            <Pressable style={styles.socialButton}>
+
+            <Pressable className="flex-row items-center justify-center bg-white border border-border rounded-2xl py-4">
               <Text style={[styles.socialIcon, { color: '#1877F2' }]}>f</Text>
-              <Text className="text-body-md font-semibold text-fg">Continue with Facebook</Text>
+              <Text className="text-body-lg font-bold text-fg ml-3">
+                Continue with Facebook
+              </Text>
             </Pressable>
-            <Pressable style={styles.socialButton}>
+
+            <Pressable className="flex-row items-center justify-center bg-white border border-border rounded-2xl py-4">
               <Text style={[styles.socialIcon, { color: '#000' }]}></Text>
-              <Text className="text-body-md font-semibold text-fg">Continue with Apple</Text>
+              <Text className="text-body-lg font-bold text-fg ml-3">
+                Continue with Apple
+              </Text>
             </Pressable>
           </View>
 
@@ -109,6 +191,7 @@ export default function SignInScreen() {
         visible={showModal}
         onClose={() => setShowModal(false)}
         email={email}
+        onVerify={handleVerify}
       />
     </SafeAreaView>
   );
