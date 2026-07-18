@@ -5,10 +5,12 @@ import { Image } from '@/tw/image';
 import { images } from '@/constants/images';
 import { languages } from '@/data/languages';
 import { useRouter } from 'expo-router';
+import { useUserStore } from '@/store/userStore';
 
 export default function LanguageSelection() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const router = useRouter();
+  const setStoreLanguage = useUserStore((state) => state.setSelectedLanguage);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -65,8 +67,8 @@ export default function LanguageSelection() {
           disabled={!selectedLanguage}
           onPress={() => {
             if (selectedLanguage) {
-              // Proceed to next screen or go back
-              router.push('/');
+              setStoreLanguage(selectedLanguage);
+              router.replace('/');
             }
           }}
         >
