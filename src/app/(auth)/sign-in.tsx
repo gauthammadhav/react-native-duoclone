@@ -6,9 +6,11 @@ import { useRouter } from "expo-router";
 import { images } from "@/constants/images";
 import VerificationModal from "@/components/VerificationModal";
 import { useSignIn, useSSO } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 
 export default function SignInScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const { signIn, errors, fetchStatus } = useSignIn();
   
   const [email, setEmail] = useState("");
@@ -54,12 +56,14 @@ export default function SignInScreen() {
             router.push("/");
           },
         });
+        posthog.capture("sign_in_completed", { method: "email_code" });
         setShowModal(false);
       } else {
         throw new Error("Verification failed. Please try again.");
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
+      posthog.captureException(err, { flow: "sign_in_verification" });
       throw new Error(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "An error occurred");
     }
   };
@@ -73,10 +77,12 @@ export default function SignInScreen() {
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
+        posthog.capture("sign_in_completed", { method: "google" });
         router.replace("/");
       }
     } catch (err) {
       console.error("Google sign in error:", JSON.stringify(err, null, 2));
+      posthog.captureException(err, { flow: "sign_in_google" });
     }
   };
 

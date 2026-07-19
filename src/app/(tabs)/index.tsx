@@ -8,16 +8,24 @@ import { lessons } from "@/data/lessons";
 import { images } from "@/constants/images";
 import { Bell, BookOpen, Headphones, Video, Bot, Check, Circle } from "lucide-react-native";
 import { useState } from "react";
+import { useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 
 export default function Index() {
+  const router = useRouter();
+  const posthog = usePostHog();
   const { user } = useUser();
   const selectedLanguageCode = useUserStore((state) => state.selectedLanguage);
   
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({ lesson: true });
 
   const toggleItem = (id: string) => {
-    setCompletedItems(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+    const isCompleted = !completedItems[id];
+    setCompletedItems(prev => ({ ...prev, [id]: isCompleted }));
+    if (isCompleted) {
+      posthog.capture("learning_plan_item_completed", { item_id: id, language_code: currentLanguageCode });
+    }
+  }; 
   
   // Find current language data, default to Spanish if not set
   const currentLanguageCode = selectedLanguageCode || 'es';
@@ -35,6 +43,10 @@ export default function Index() {
     if (currentLanguageCode === 'fr') return 'Bonjour';
     if (currentLanguageCode === 'de') return 'Hallo';
     if (currentLanguageCode === 'it') return 'Ciao';
+    if (currentLanguageCode === 'pt') return 'Olá';
+    if (currentLanguageCode === 'ja') return 'こんにちは';
+    if (currentLanguageCode === 'ko') return '안녕하세요';
+    if (currentLanguageCode === 'zh') return '你好';
     return 'Hello';
   };
 
@@ -87,7 +99,10 @@ export default function Index() {
               <Text className="text-body-lg text-white/90 mb-5">A1 • Unit 3</Text>
               <Pressable 
                 className="bg-white rounded-2xl py-3.5 px-6 self-start shadow-sm active:opacity-80"
-                onPress={() => {}}
+                onPress={() => {
+                  posthog.capture("lesson_opened", { entry_point: "continue_learning", language_code: currentLanguageCode });
+                  router.push('/(tabs)/learn');
+                }}
               >
                 <Text className="text-body-lg font-bold text-primary">Continue</Text>
               </Pressable>
@@ -104,7 +119,12 @@ export default function Index() {
           <View className="gap-5">
             <View className="flex-row justify-between items-center mb-1">
               <Text className="text-h3 font-bold text-fg">Today's plan</Text>
-              <Text className="text-body-md font-bold text-primary">View all</Text>
+              <Pressable onPress={() => {
+                posthog.capture("lesson_opened", { entry_point: "todays_plan", language_code: currentLanguageCode });
+                router.push('/(tabs)/learn');
+              }} className="active:opacity-70">
+                <Text className="text-body-md font-bold text-primary">View all</Text>
+              </Pressable>
             </View>
 
             {/* Item 1: Lesson */}

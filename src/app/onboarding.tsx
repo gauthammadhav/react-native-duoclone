@@ -4,9 +4,11 @@ import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { View, Text, Pressable } from "@/tw";
 import { images } from "@/constants/images";
 import { useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const { width } = useWindowDimensions();
 
   // Measure the exact available height for the mascot section
@@ -85,7 +87,10 @@ export default function OnboardingScreen() {
       <View className="px-6 pb-8">
         <Pressable
           className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
-          onPress={() => router.push("/(auth)/sign-up")}
+          onPress={() => {
+            posthog.capture("onboarding_started", { entry_point: "get_started" });
+            router.push("/(auth)/sign-up");
+          }}
         >
           <Text className="text-body-lg font-semibold text-white mr-2">
             Get Started
