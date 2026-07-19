@@ -38,8 +38,15 @@ export default function LessonScreen() {
   const insets = useSafeAreaInsets();
   const { markCompleted } = useLessonStore();
 
-  // ── lesson data ──────────────────────────────────────────────────────────
-  const lesson = lessons.find((l) => l.id === id) ?? lessons[0];
+  // ── lesson data ───────────────────────────────────────────────────────────
+  const lesson = lessons.find((l) => l.id === id);
+
+  // Guard: unknown / malformed route ID — go back immediately, never touch store
+  useEffect(() => {
+    if (!lesson) router.back();
+  }, [lesson, router]);
+
+  if (!lesson) return null;
 
   // ── UI state ─────────────────────────────────────────────────────────────
   const [sessionState, setSessionState] = useState<SessionState>("connecting");
@@ -47,13 +54,34 @@ export default function LessonScreen() {
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(false);
 
-  // ── Mock teacher messages cycling ────────────────────────────────────────
+  // ── Language-aware greetings ────────────────────────────────────────────
+  // Derive language code from the lesson ID prefix (e.g. "es_lesson_3" → "es")
+  const langCode = lesson.id.split('_')[0];
+  const GREETINGS: Record<string, string> = {
+    es: '\u00a1Hola', fr: 'Bonjour', ja: '\u3053\u3093\u306b\u3061\u306f',
+    de: 'Hallo',    it: 'Ciao',    ko: '\uc548\ub155\ud558\uc138\uc694',
+    zh: '\u4f60\u597d',  pt: 'Ol\u00e1',
+  };
+  const AFFIRMATIONS: Record<string, string> = {
+    es: '\u00a1Muy bien! That was great! \ud83d\udc4f',
+    fr: 'Tr\u00e8s bien\u202f! That was great! \ud83d\udc4f',
+    ja: '\u3088\u304f\u3067\u304d\u307e\u3057\u305f\uff01 That was great! \ud83d\udc4f',
+    de: 'Sehr gut! That was great! \ud83d\udc4f',
+    it: 'Molto bene! That was great! \ud83d\udc4f',
+    ko: '\uc798 \ud588\uc5b4\uc694! That was great! \ud83d\udc4f',
+    zh: '\u5f88\u597d\uff01 That was great! \ud83d\udc4f',
+    pt: 'Muito bem! That was great! \ud83d\udc4f',
+  };
+  const greeting = GREETINGS[langCode] ?? 'Hello';
+  const affirmation = AFFIRMATIONS[langCode] ?? 'Great job! \ud83d\udc4f';
+
+  // ── Mock teacher messages cycling ───────────────────────────────────────────
   const teacherMessages = [
-    `¡Hola! I'm your AI teacher. Today we'll practice: "${lesson.title}"`,
+    `${greeting}! I'm your AI teacher. Today we'll practice: "${lesson.title}"`,
     lesson.phrases[0]
       ? `Try saying: "${lesson.phrases[0].phrase}"`
       : `Let's begin with "${lesson.goal}"`,
-    "¡Muy bien! That was great! 👏",
+    affirmation,
     "Now let's try the next phrase. Are you ready?",
   ];
   const [messageIndex, setMessageIndex] = useState(0);
@@ -71,15 +99,20 @@ export default function LessonScreen() {
   useEffect(() => {
     if (sessionState !== "active") return;
     // Cycle through teacher messages every 4 seconds
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     const interval = setInterval(() => {
       setSessionState("speaking");
-      setTimeout(() => {
+      timeoutHandle = setTimeout(() => {
         setMessageIndex((i) => (i + 1) % teacherMessages.length);
         setSessionState("active");
+        timeoutHandle = null;
       }, 2000);
     }, 4000);
-    return () => clearInterval(interval);
-  }, [sessionState]);
+    return () => {
+      clearInterval(interval);
+      if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+    };
+  }, [sessionState, teacherMessages.length]);
 
   // Pulse loop for the mic listening indicator
   useEffect(() => {
@@ -122,7 +155,7 @@ export default function LessonScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#1A1A2E" }}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={[styles.header, { paddingTop: 8 }]}>
-        <TouchableOpacity onPress={handleEndCall} style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Text style={styles.backArrow}>‹</Text>
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>

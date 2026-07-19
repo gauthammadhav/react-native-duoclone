@@ -34,7 +34,7 @@ function getLessonStatus(
 export default function Learn() {
   const router = useRouter();
   const selectedLanguageCode = useUserStore((s) => s.selectedLanguage);
-  const { completedLessonIds, inProgressLessonId, setInProgress } =
+  const { completedLessonIds, inProgressLessonId, setInProgress, _hasHydrated } =
     useLessonStore();
 
   const [activeTab, setActiveTab] = useState<TabType>("lessons");
@@ -62,6 +62,9 @@ export default function Learn() {
 
   // ── seed mock state if this is first time viewing ─────────────────────────
   useEffect(() => {
+    // Wait until AsyncStorage rehydration is done — prevents overwriting saved progress
+    if (!_hasHydrated) return;
+
     // Only seed if nothing is tracked yet for this language
     const hasAnyProgress = langLessons.some(
       (l) =>
@@ -79,10 +82,12 @@ export default function Learn() {
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [langCode]);
+  }, [langCode, _hasHydrated]);
 
   // ── handle lesson tap ─────────────────────────────────────────────────────
-  const handleLessonPress = (lesson: LessonWithImage) => {
+  const handleLessonPress = (lesson: LessonWithImage, status: LessonStatus) => {
+    // Locked lessons are not navigable yet
+    if (status === "locked") return;
     setInProgress(lesson.id);
     router.push(`/lesson/${lesson.id}`);
   };
@@ -183,7 +188,7 @@ export default function Learn() {
                   lesson={lesson}
                   index={index}
                   status={status}
-                  onPress={() => handleLessonPress(lesson)}
+                  onPress={() => handleLessonPress(lesson, status)}
                 />
               );
             })}
@@ -217,14 +222,17 @@ interface LessonCardProps {
 function LessonCard({ lesson, index, status, onPress }: LessonCardProps) {
   const isCompleted = status === "completed";
   const isInProgress = status === "in_progress";
+  const isLocked = status === "locked";
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.75}
+      disabled={isLocked}
+      activeOpacity={isLocked ? 1 : 0.75}
       style={[
         styles.card,
         isInProgress && styles.cardActive,
+        isLocked && { opacity: 0.6 },
       ]}
     >
       <View style={{ flex: 1 }}>

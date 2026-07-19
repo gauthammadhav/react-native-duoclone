@@ -7,11 +7,14 @@ interface LessonState {
   completedLessonIds: string[];
   /** The lesson currently in progress (only one at a time) */
   inProgressLessonId: string | null;
+  /** True once AsyncStorage has been rehydrated — same pattern as userStore */
+  _hasHydrated: boolean;
 
   markCompleted: (lessonId: string) => void;
   setInProgress: (lessonId: string | null) => void;
   isCompleted: (lessonId: string) => boolean;
   isInProgress: (lessonId: string) => boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useLessonStore = create<LessonState>()(
@@ -19,6 +22,7 @@ export const useLessonStore = create<LessonState>()(
     (set, get) => ({
       completedLessonIds: [],
       inProgressLessonId: null,
+      _hasHydrated: false,
 
       markCompleted: (lessonId) =>
         set((state) => ({
@@ -38,10 +42,15 @@ export const useLessonStore = create<LessonState>()(
 
       isInProgress: (lessonId) =>
         get().inProgressLessonId === lessonId,
+
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: 'lesson-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
