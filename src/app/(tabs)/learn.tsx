@@ -84,8 +84,7 @@ export default function Learn() {
   // ── handle lesson tap ─────────────────────────────────────────────────────
   const handleLessonPress = (lesson: LessonWithImage) => {
     setInProgress(lesson.id);
-    // TODO: navigate to lesson detail screen
-    // router.push(`/lesson/${lesson.id}`);
+    router.push(`/lesson/${lesson.id}`);
   };
 
   return (
