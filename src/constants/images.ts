@@ -14,6 +14,7 @@ const palace = require("@/assets/images/palace.png");
 const treasure = require("@/assets/images/treasure.png");
 const streakFire = require("@/assets/images/streak-fire.png");
 const icon = require("@/assets/images/icon.png");
+const lessonScreenThumbnail = require("@/assets/images/lesson_screen_thumbnail.png");
 
 export const images = {
   mascotLogo,
@@ -24,4 +25,5 @@ export const images = {
   treasure,
   streakFire,
   icon,
+  lessonScreenThumbnail,
 };
