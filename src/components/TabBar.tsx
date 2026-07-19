@@ -56,8 +56,8 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         </Animated.View>
       )}
 
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key] as any;
         const label =
           options.tabBarLabel !== undefined
             ? options.tabBarLabel
@@ -98,7 +98,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
+            testID={(options as any).tabBarTestID}
             onPress={onPress}
             onLongPress={onLongPress}
             className="flex-1 items-center justify-center h-12"
