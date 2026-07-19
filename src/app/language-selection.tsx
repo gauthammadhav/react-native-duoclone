@@ -6,10 +6,12 @@ import { images } from '@/constants/images';
 import { languages } from '@/data/languages';
 import { useRouter } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
+import { usePostHog } from 'posthog-react-native';
 
 export default function LanguageSelection() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const router = useRouter();
+  const posthog = usePostHog();
   const setStoreLanguage = useUserStore((state) => state.setSelectedLanguage);
 
   return (
@@ -67,6 +69,8 @@ export default function LanguageSelection() {
           disabled={!selectedLanguage}
           onPress={() => {
             if (selectedLanguage) {
+              posthog.capture('language_selected', { language_code: selectedLanguage });
+              posthog.register({ selected_language: selectedLanguage });
               setStoreLanguage(selectedLanguage);
               router.replace('/');
             }
