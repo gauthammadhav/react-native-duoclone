@@ -52,7 +52,7 @@ function InitialLayout() {
   useEffect(() => {
     if (user?.id) {
       posthog.identify(user.id, {
-        selected_language: selectedLanguage ?? undefined,
+        selected_language: selectedLanguage ?? null,
       });
     }
   }, [user?.id, selectedLanguage]);

@@ -35,6 +35,7 @@ export type ImageProps = React.ComponentProps<typeof CSSImage> & {
 };
 
 export const Image = (props: ImageProps) => {
+  // @ts-ignore: Type instantiation is excessively deep
   return useCssElement(CSSImage, props, { className: "style" });
 };
 

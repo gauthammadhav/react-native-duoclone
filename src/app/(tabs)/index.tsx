@@ -192,7 +192,13 @@ export default function Index() {
           </View>
 
           {/* Next up Card */}
-          <View className="bg-[#F0FDF4] rounded-[24px] p-5 flex-row justify-between items-center mt-1">
+          <Pressable 
+            className="bg-[#F0FDF4] rounded-[24px] p-5 flex-row justify-between items-center mt-1 active:opacity-80"
+            onPress={() => {
+              posthog.capture("lesson_opened", { entry_point: "next_up", language_code: currentLanguageCode });
+              router.push(`/lesson/${currentLesson.id}`);
+            }}
+          >
             <View className="gap-1 flex-1">
               <Text className="text-body-sm font-medium text-[#6B7280]">Next up</Text>
               <Text className="text-h3 font-bold text-fg">AI Video Call</Text>
@@ -208,7 +214,7 @@ export default function Index() {
                 <Video color="white" size={12} strokeWidth={3} />
               </View>
             </View>
-          </View>
+          </Pressable>
 
         </View>
       </ScrollView>
