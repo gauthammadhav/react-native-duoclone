@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/expo";
+import { useUser, useAuth } from "@clerk/expo";
 import { StreamVideo, StreamVideoClient, User } from "@stream-io/video-react-native-sdk";
 import Constants from "expo-constants";
 import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const getApiUrl = (path: string) => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return `${process.env.EXPO_PUBLIC_API_URL}${path}`;
+  }
   const hostUri = Constants.expoConfig?.hostUri;
   const baseUrl = hostUri ? `http://${hostUri}` : "http://localhost:8081";
   return `${baseUrl}${path}`;
@@ -13,6 +16,7 @@ export const getApiUrl = (path: string) => {
 
 export const StreamVideoProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [client, setClient] = useState<StreamVideoClient>();
   const insets = useSafeAreaInsets();
 
@@ -20,7 +24,7 @@ export const StreamVideoProvider = ({ children }: { children: React.ReactNode })
     if (!user) {
       if (client) {
         client.disconnectUser().catch(console.error);
-        setClient(undefined);
+        setClient(null);
       }
       return;
     }
@@ -32,10 +36,13 @@ export const StreamVideoProvider = ({ children }: { children: React.ReactNode })
     };
 
     const tokenProvider = async () => {
+      const clerkToken = await getToken();
       const response = await fetch(getApiUrl("/api/stream/token"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${clerkToken}`
+        },
       });
       const data = await response.json();
       return data.token;

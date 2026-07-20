@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { images } from "@/constants/images";
 import { lessons } from "@/data/lessons";
 import { useLessonStore } from "@/store/lessonStore";
-import { useUser } from "@clerk/expo";
+import { useUser, useAuth } from "@clerk/expo";
 import {
   StreamCall,
   useStreamVideoClient,
@@ -41,6 +41,7 @@ export default function LessonScreen() {
   const router = useRouter();
   const lesson = lessons.find((l) => l.id === id);
   const { user } = useUser();
+  const { getToken } = useAuth();
   const client = useStreamVideoClient();
   const [call, setCall] = useState<Call>();
 
@@ -58,11 +59,14 @@ export default function LessonScreen() {
 
     const initializeCall = async () => {
       try {
+        const clerkToken = await getToken();
         const response = await fetch(getApiUrl("/api/stream/call"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${clerkToken}`
+          },
           body: JSON.stringify({ 
-            userId: user.id, 
             lessonId: lesson.id,
             language: lesson.id.split("_")[0]
           }),

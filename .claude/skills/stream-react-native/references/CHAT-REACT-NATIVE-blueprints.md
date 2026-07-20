@@ -73,15 +73,18 @@ const LoginScreen = ({
       return;
     }
 
+    // Provide your app's session token/cookie so the backend can securely derive the user ID
     const response = await fetch(
-      `https://your-api.example.com/stream-token?user_id=${encodeURIComponent(userId)}`,
+      `https://your-api.example.com/stream-token`,
+      // { headers: { Authorization: `Bearer ${myAppSessionToken}` } }
     );
     const body = await response.json();
+    const resolvedUserId = body.userId || userId;
     onSession({
       apiKey: body.apiKey,
       token: body.token,
-      userId,
-      userName: body.userName || userName || userId,
+      userId: resolvedUserId,
+      userName: body.userName || userName || resolvedUserId,
     });
   }, [apiKey, onSession, token, userId, userName]);
 
