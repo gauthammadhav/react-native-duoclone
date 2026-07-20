@@ -1,13 +1,14 @@
-import "../../global.css";
-import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
-import { useEffect, useRef } from "react";
-import * as SplashScreen from "expo-splash-screen";
+import { posthog } from "@/config/posthog";
+import { StreamVideoProvider } from "@/components/StreamVideoProvider";
 import { usePoppins } from "@/hooks/usePoppins";
+import { useUserStore } from "@/store/userStore";
 import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { useUserStore } from "@/store/userStore";
+import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from "posthog-react-native";
-import { posthog } from "@/config/posthog";
+import { useEffect, useRef } from "react";
+import "../../global.css";
 
 // Keep the splash screen visible while fonts are loading
 SplashScreen.preventAutoHideAsync();
@@ -29,7 +30,7 @@ function InitialLayout() {
   const previousPathname = useRef<string | undefined>(undefined);
   const segments = useSegments();
   const router = useRouter();
-  
+
   const hasHydrated = useUserStore((state) => state._hasHydrated);
   const selectedLanguage = useUserStore((state) => state.selectedLanguage);
 
@@ -107,7 +108,9 @@ export default function RootLayout() {
         client={posthog}
         autocapture={{ captureScreens: false, captureTouches: true, propsToCapture: ["testID"] }}
       >
-        <InitialLayout />
+        <StreamVideoProvider>
+          <InitialLayout />
+        </StreamVideoProvider>
       </PostHogProvider>
     </ClerkProvider>
   );

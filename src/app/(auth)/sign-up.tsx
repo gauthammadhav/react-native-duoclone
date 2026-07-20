@@ -1,12 +1,12 @@
-import { useState, useRef } from "react";
-import { TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text, Pressable } from "@/tw";
-import { useRouter } from "expo-router";
-import { images } from "@/constants/images";
 import VerificationModal from "@/components/VerificationModal";
-import { useSignUp, useAuth, useSSO } from "@clerk/expo";
+import { images } from "@/constants/images";
+import { Pressable, Text, View } from "@/tw";
+import { useAuth, useSignUp, useSSO } from "@clerk/expo";
+import { useRouter } from "expo-router";
 import { usePostHog } from "posthog-react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
   const { startSSOFlow } = useSSO();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,9 +28,9 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (!email.trim() || !password.trim()) return;
-    
+
     setErrorMsg("");
-    
+
     try {
       const { error } = await signUp.password({
         emailAddress: email,
@@ -102,11 +102,11 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -121,10 +121,10 @@ export default function SignUpScreen() {
 
           {/* Mascot Image */}
           <View className="items-center mb-6">
-            <Image 
-              source={images.mascotAuth || images.mascotWelcome} 
-              style={styles.mascot} 
-              resizeMode="contain" 
+            <Image
+              source={images.mascotAuth || images.mascotWelcome}
+              style={styles.mascot}
+              resizeMode="contain"
             />
           </View>
 
@@ -171,7 +171,7 @@ export default function SignUpScreen() {
               <Text className="text-error mt-2">{errorMsg}</Text>
             ) : null}
 
-            <Pressable 
+            <Pressable
               className={`bg-primary rounded-2xl py-4 items-center mt-2 ${isLoading ? 'opacity-70' : ''}`}
               onPress={handleSignUp}
               disabled={isLoading}
@@ -193,7 +193,7 @@ export default function SignUpScreen() {
 
           {/* Social Auth */}
           <View className="px-6 space-y-4 pb-12">
-            <Pressable 
+            <Pressable
               style={styles.socialButton}
               onPress={handleGoogleSignIn}
             >
