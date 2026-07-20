@@ -39,7 +39,7 @@ export default function SignUpScreen() {
 
       if (error) {
         console.error(JSON.stringify(error, null, 2));
-        setErrorMsg(error.errors?.[0]?.longMessage || error.errors?.[0]?.message || error.message || "An error occurred");
+        setErrorMsg((error as any).errors?.[0]?.longMessage || (error as any).errors?.[0]?.message || error.message || "An error occurred");
         return;
       }
 

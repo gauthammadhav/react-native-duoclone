@@ -1,15 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  TouchableOpacity,
-  Animated as RNAnimated,
-  Easing,
-} from "react-native";
+import { Animated as RNAnimated, Easing } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text } from "@/tw";
+import { View, Text, Pressable } from "@/tw";
 import { Image } from "@/tw/image";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Video,
   Mic,
@@ -17,31 +11,30 @@ import {
   Languages,
   PhoneOff,
   Volume2,
+  ChevronLeft,
+  User,
 } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { images } from "@/constants/images";
 import { lessons } from "@/data/lessons";
 import { useLessonStore } from "@/store/lessonStore";
 
 // ── Mock feedback data ────────────────────────────────────────────────────────
 const FEEDBACK_RATINGS = [
-  { label: "Speaking", value: "Excellent", color: "#58CC02" },
-  { label: "Pronunciation", value: "Great", color: "#5B5EA6" },
-  { label: "Grammar", value: "Good", color: "#5B5EA6" },
+  { label: "Speaking", value: "Excellent", color: "text-[#58CC02]" },
+  { label: "Pronunciation", value: "Great", color: "text-[#3B82F6]" },
+  { label: "Grammar", value: "Good", color: "text-[#8B5CF6]" },
 ];
 
-// ── Session states ────────────────────────────────────────────────────────────
 type SessionState = "connecting" | "active" | "listening" | "speaking";
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { markCompleted } = useLessonStore();
 
-  // ── lesson data ───────────────────────────────────────────────────────────
   const lesson = lessons.find((l) => l.id === id);
 
-  // Guard: unknown / malformed route ID — go back immediately, never touch store
   useEffect(() => {
     if (!lesson) router.back();
   }, [lesson, router]);
@@ -55,33 +48,32 @@ export default function LessonScreen() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
 
   // ── Language-aware greetings ────────────────────────────────────────────
-  // Derive language code from the lesson ID prefix (e.g. "es_lesson_3" → "es")
-  const langCode = lesson.id.split('_')[0];
+  const langCode = lesson.id.split("_")[0];
   const GREETINGS: Record<string, string> = {
-    es: '\u00a1Hola', fr: 'Bonjour', ja: '\u3053\u3093\u306b\u3061\u306f',
-    de: 'Hallo',    it: 'Ciao',    ko: '\uc548\ub155\ud558\uc138\uc694',
-    zh: '\u4f60\u597d',  pt: 'Ol\u00e1',
+    es: "¡Hola", fr: "Bonjour", ja: "こんにちは",
+    de: "Hallo", it: "Ciao", ko: "안녕하세요",
+    zh: "你好", pt: "Olá",
   };
   const AFFIRMATIONS: Record<string, string> = {
-    es: '\u00a1Muy bien! That was great! \ud83d\udc4f',
-    fr: 'Tr\u00e8s bien\u202f! That was great! \ud83d\udc4f',
-    ja: '\u3088\u304f\u3067\u304d\u307e\u3057\u305f\uff01 That was great! \ud83d\udc4f',
-    de: 'Sehr gut! That was great! \ud83d\udc4f',
-    it: 'Molto bene! That was great! \ud83d\udc4f',
-    ko: '\uc798 \ud588\uc5b4\uc694! That was great! \ud83d\udc4f',
-    zh: '\u5f88\u597d\uff01 That was great! \ud83d\udc4f',
-    pt: 'Muito bem! That was great! \ud83d\udc4f',
+    es: "¡Muy bien!\nThat was great! 👏",
+    fr: "Très bien !\nThat was great! 👏",
+    ja: "よくできました！\nThat was great! 👏",
+    de: "Sehr gut!\nThat was great! 👏",
+    it: "Molto bene!\nThat was great! 👏",
+    ko: "잘 했어요!\nThat was great! 👏",
+    zh: "很好！\nThat was great! 👏",
+    pt: "Muito bem!\nThat was great! 👏",
   };
-  const greeting = GREETINGS[langCode] ?? 'Hello';
-  const affirmation = AFFIRMATIONS[langCode] ?? 'Great job! \ud83d\udc4f';
+  const greeting = GREETINGS[langCode] ?? "Hello";
+  const affirmation = AFFIRMATIONS[langCode] ?? "Great job!\nThat was great! 👏";
 
   // ── Mock teacher messages cycling ───────────────────────────────────────────
   const teacherMessages = [
+    affirmation,
     `${greeting}! I'm your AI teacher. Today we'll practice: "${lesson.title}"`,
     lesson.phrases[0]
       ? `Try saying: "${lesson.phrases[0].phrase}"`
       : `Let's begin with "${lesson.goal}"`,
-    affirmation,
     "Now let's try the next phrase. Are you ready?",
   ];
   const [messageIndex, setMessageIndex] = useState(0);
@@ -91,14 +83,12 @@ export default function LessonScreen() {
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
   useEffect(() => {
-    // Simulate session connecting → active
     const timer = setTimeout(() => setSessionState("active"), 1500);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (sessionState !== "active") return;
-    // Cycle through teacher messages every 4 seconds
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     const interval = setInterval(() => {
       setSessionState("speaking");
@@ -106,15 +96,14 @@ export default function LessonScreen() {
         setMessageIndex((i) => (i + 1) % teacherMessages.length);
         setSessionState("active");
         timeoutHandle = null;
-      }, 2000);
-    }, 4000);
+      }, 3000);
+    }, 6000);
     return () => {
       clearInterval(interval);
       if (timeoutHandle !== null) clearTimeout(timeoutHandle);
     };
   }, [sessionState, teacherMessages.length]);
 
-  // Pulse loop for the mic listening indicator
   useEffect(() => {
     const pulse = RNAnimated.loop(
       RNAnimated.sequence([
@@ -136,433 +125,157 @@ export default function LessonScreen() {
     return () => pulse.stop();
   }, [pulseAnim]);
 
-  // ── handlers ─────────────────────────────────────────────────────────────
   const handleEndCall = () => {
     markCompleted(lesson.id);
     router.back();
   };
 
-  const sessionLabel =
-    sessionState === "connecting"
-      ? "Connecting..."
-      : sessionState === "speaking"
-      ? "Teacher is speaking..."
-      : micEnabled
-      ? "Your turn — speak now"
-      : "Mic off";
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#1A1A2E" }}>
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Text style={styles.backArrow}>‹</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.headerTitle}>AI Teacher</Text>
-          <View style={styles.onlineRow}>
-            <View style={styles.onlineDot} />
-            <Text style={styles.onlineText}>Online</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FAFAFA" }} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View className="flex-row items-center px-4 py-3">
+        <Pressable 
+          onPress={() => router.back()} 
+          className="w-10 h-10 items-center justify-center -ml-2 active:opacity-70"
+        >
+          <ChevronLeft size={28} color="#1F2937" strokeWidth={2.5} />
+        </Pressable>
+        <View className="flex-1 ml-1">
+          <Text className="text-[18px] font-bold text-[#1F2937]">AI Teacher</Text>
+          <View className="flex-row items-center gap-1.5 mt-0.5">
+            <View className="w-2 h-2 rounded-full bg-[#58CC02]" />
+            <Text className="text-[13px] text-[#6B7280] font-semibold">Online</Text>
           </View>
         </View>
-        {/* Right action icons */}
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.actionChip}
-            onPress={() => setCameraEnabled((v) => !v)}
-            activeOpacity={0.75}
+        <View className="flex-row gap-2">
+          <Pressable 
+            className="w-10 h-10 rounded-full bg-white border border-[#F3F4F6] items-center justify-center shadow-sm active:opacity-75"
+            onPress={() => setCameraEnabled(!cameraEnabled)}
           >
-            <Video size={18} color={cameraEnabled ? "#5B5EA6" : "#6B7280"} strokeWidth={2} />
-          </TouchableOpacity>
-          <View style={styles.actionChip}>
-            <Text style={styles.streakNum}>12</Text>
+            <Video size={18} color="#1F2937" strokeWidth={2.5} />
+          </Pressable>
+          <View className="w-10 h-10 rounded-full bg-white border border-[#F3F4F6] items-center justify-center shadow-sm">
+            <Text className="text-[15px] font-bold text-[#1F2937]">12</Text>
           </View>
-          <TouchableOpacity style={styles.actionChip} activeOpacity={0.75}>
-            <Volume2 size={18} color="#6B7280" strokeWidth={2} />
-          </TouchableOpacity>
+          <Pressable className="w-10 h-10 rounded-full bg-white border border-[#F3F4F6] items-center justify-center shadow-sm active:opacity-75">
+            <User size={18} color="#1F2937" strokeWidth={2.5} />
+          </Pressable>
         </View>
       </View>
 
-      {/* ── Teacher area (full-width card) ──────────────────────────────── */}
-      <View style={styles.teacherCard}>
-        {/* Background gradient overlay */}
-        <View style={styles.teacherBg} />
-
-        {/* Mascot — centered, large */}
-        <Image
-          source={images.mascotAuth}
-          style={styles.mascotImage}
-          contentFit="contain"
-        />
-
-        {/* User preview — top right */}
-        <View style={styles.userPreview}>
+      {/* Main Content */}
+      <View className="flex-1 px-4 pb-4 mt-2">
+        {/* Teacher Card */}
+        <View className="flex-1 rounded-[28px] overflow-hidden bg-[#F3F4F6] mb-5 relative">
           <Image
-            source={{ uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80" }}
-            style={styles.userPreviewImage}
+            source={images.aiTeacherBg}
+            style={{ width: '100%', height: '100%', position: 'absolute' }}
             contentFit="cover"
           />
-          {cameraEnabled && (
-            <View style={styles.cameraOffOverlay}>
-              <Video size={14} color="#fff" strokeWidth={2} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.7)']}
+            locations={[0.5, 0.8, 1]}
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 300 }}
+          />
+
+          {/* User Preview */}
+          <View className="absolute top-4 right-4 w-[80px] h-[100px] rounded-2xl overflow-hidden border-[3px] border-white shadow-lg bg-[#E5E7EB]">
+            <Image
+              source={{ uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80" }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+            />
+            {!cameraEnabled && (
+              <View className="absolute inset-0 bg-black/40 items-center justify-center">
+                <Video size={16} color="#fff" strokeWidth={2.5} />
+              </View>
+            )}
+          </View>
+
+          {/* Speech Bubble */}
+          {subtitlesEnabled && (
+            <View className="absolute bottom-[115px] left-4 right-4 items-center">
+              {/* Tail */}
+              <View 
+                className="w-5 h-5 bg-white absolute -bottom-2 right-[60px] rounded-[3px] shadow-sm" 
+                style={{ transform: [{ rotate: '45deg' }] }} 
+              />
+              <View className="bg-white rounded-[20px] p-4 flex-row items-center shadow-lg w-full">
+                <View className="flex-1 pl-2">
+                  <Text className="text-[17px] font-medium text-[#1F2937] leading-[26px]">
+                    {currentMessage}
+                  </Text>
+                </View>
+                <Pressable className="w-11 h-11 items-center justify-center ml-2 active:opacity-70">
+                  <Volume2 size={24} color="#4F46E5" strokeWidth={2.5} />
+                </Pressable>
+              </View>
             </View>
           )}
-        </View>
 
-        {/* Session status pill */}
-        <View style={styles.statusPill}>
-          <RNAnimated.View
-            style={[
-              styles.statusDot,
-              { transform: [{ scale: sessionState === "speaking" ? pulseAnim : 1 }] },
-            ]}
-          />
-          <Text style={styles.statusText}>{sessionLabel}</Text>
-        </View>
-
-        {/* Speech bubble */}
-        {subtitlesEnabled && sessionState !== "connecting" && (
-          <View style={styles.bubbleWrapper}>
-            <View style={styles.bubble}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bubbleText}>{currentMessage}</Text>
-              </View>
-              <TouchableOpacity style={styles.speakerBtn} activeOpacity={0.7}>
-                <Volume2 size={20} color="#5B5EA6" strokeWidth={2.5} />
-              </TouchableOpacity>
+          {/* Controls */}
+          <View className="absolute bottom-6 left-0 right-0 flex-row justify-evenly px-2">
+            <View className="items-center gap-2">
+              <Pressable 
+                className="w-[60px] h-[60px] rounded-full bg-white items-center justify-center shadow-md active:opacity-75"
+                onPress={() => setCameraEnabled(!cameraEnabled)}
+              >
+                <Video size={24} color="#1F2937" strokeWidth={2.5} />
+              </Pressable>
+              <Text className="text-[13px] text-white font-semibold">Camera</Text>
             </View>
-            {/* Bubble tail */}
-            <View style={styles.bubbleTail} />
+
+            <View className="items-center gap-2">
+              <RNAnimated.View style={micEnabled ? { transform: [{ scale: pulseAnim }] } : {}}>
+                <Pressable 
+                  className="w-[60px] h-[60px] rounded-full bg-white items-center justify-center shadow-md active:opacity-75"
+                  onPress={() => setMicEnabled(!micEnabled)}
+                >
+                  {micEnabled ? (
+                    <Mic size={24} color="#1F2937" strokeWidth={2.5} />
+                  ) : (
+                    <MicOff size={24} color="#EF4444" strokeWidth={2.5} />
+                  )}
+                </Pressable>
+              </RNAnimated.View>
+              <Text className="text-[13px] text-white font-semibold">Mic</Text>
+            </View>
+
+            <View className="items-center gap-2">
+              <Pressable 
+                className="w-[60px] h-[60px] rounded-full bg-white items-center justify-center shadow-md active:opacity-75"
+                onPress={() => setSubtitlesEnabled(!subtitlesEnabled)}
+              >
+                <Languages size={24} color="#1F2937" strokeWidth={2.5} />
+              </Pressable>
+              <Text className="text-[13px] text-white font-semibold">Subtitles</Text>
+            </View>
+
+            <View className="items-center gap-2">
+              <Pressable 
+                className="w-[60px] h-[60px] rounded-full bg-[#EF4444] items-center justify-center shadow-md active:opacity-80"
+                onPress={handleEndCall}
+              >
+                <PhoneOff size={24} color="#FFFFFF" strokeWidth={2.5} />
+              </Pressable>
+              <Text className="text-[13px] text-white font-semibold">End Call</Text>
+            </View>
           </View>
-        )}
-      </View>
-
-      {/* ── Controls row ────────────────────────────────────────────────── */}
-      <View style={styles.controls}>
-        {/* Camera */}
-        <View style={styles.controlItem}>
-          <TouchableOpacity
-            style={styles.controlBtn}
-            onPress={() => setCameraEnabled((v) => !v)}
-            activeOpacity={0.75}
-          >
-            <Video size={22} color={cameraEnabled ? "#5B5EA6" : "#1A1A2E"} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.controlLabel}>Camera</Text>
         </View>
 
-        {/* Mic */}
-        <View style={styles.controlItem}>
-          <RNAnimated.View
-            style={[
-              styles.controlBtn,
-              micEnabled && { transform: [{ scale: pulseAnim }] },
-              micEnabled && styles.controlBtnActive,
-            ]}
-          >
-            <TouchableOpacity onPress={() => setMicEnabled((v) => !v)} activeOpacity={0.75}>
-              {micEnabled ? (
-                <Mic size={22} color="#1A1A2E" strokeWidth={2} />
-              ) : (
-                <MicOff size={22} color="#EF4444" strokeWidth={2} />
-              )}
-            </TouchableOpacity>
-          </RNAnimated.View>
-          <Text style={styles.controlLabel}>Mic</Text>
+        {/* Feedback Card */}
+        <View className="flex-row bg-white rounded-[24px] py-4 border border-[#F3F4F6] shadow-sm mb-4">
+          {FEEDBACK_RATINGS.map((item, i) => (
+            <View 
+              key={item.label} 
+              className={`flex-1 items-center gap-1.5 ${i < FEEDBACK_RATINGS.length - 1 ? 'border-r border-[#F3F4F6]' : ''}`}
+            >
+              <Text className="text-[13px] font-semibold text-[#1F2937]">{item.label}</Text>
+              <Text className={`text-[14px] font-bold ${item.color}`}>{item.value}</Text>
+            </View>
+          ))}
         </View>
-
-        {/* Subtitles */}
-        <View style={styles.controlItem}>
-          <TouchableOpacity
-            style={styles.controlBtn}
-            onPress={() => setSubtitlesEnabled((v) => !v)}
-            activeOpacity={0.75}
-          >
-            <Languages size={22} color={subtitlesEnabled ? "#5B5EA6" : "#1A1A2E"} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.controlLabel}>Subtitles</Text>
-        </View>
-
-        {/* End Call */}
-        <View style={styles.controlItem}>
-          <TouchableOpacity
-            style={[styles.controlBtn, styles.endCallBtn]}
-            onPress={handleEndCall}
-            activeOpacity={0.8}
-          >
-            <PhoneOff size={22} color="#FFFFFF" strokeWidth={2.5} />
-          </TouchableOpacity>
-          <Text style={styles.controlLabel}>End Call</Text>
-        </View>
-      </View>
-
-      {/* ── Feedback card ───────────────────────────────────────────────── */}
-      <View style={[styles.feedbackCard, { marginBottom: Math.max(insets.bottom + 8, 16) }]}>
-        {FEEDBACK_RATINGS.map((item, i) => (
-          <View
-            key={item.label}
-            style={[
-              styles.feedbackItem,
-              i < FEEDBACK_RATINGS.length - 1 && styles.feedbackDivider,
-            ]}
-          >
-            <Text style={styles.feedbackLabel}>{item.label}</Text>
-            <Text style={[styles.feedbackValue, { color: item.color }]}>
-              {item.value}
-            </Text>
-          </View>
-        ))}
       </View>
     </SafeAreaView>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backArrow: {
-    fontSize: 30,
-    color: "#1A1A2E",
-    lineHeight: 34,
-    fontWeight: "300",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A1A2E",
-  },
-  onlineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: 2,
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#58CC02",
-  },
-  onlineText: {
-    fontSize: 13,
-    color: "#58CC02",
-    fontWeight: "600",
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionChip: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F2F2F7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  streakNum: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1A1A2E",
-  },
-
-  // Teacher card
-  teacherCard: {
-    flex: 1,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 24,
-    overflow: "hidden",
-    position: "relative",
-    backgroundColor: "#D6C9B8",
-  },
-  teacherBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#C8BAA8",
-  },
-  mascotImage: {
-    position: "absolute",
-    bottom: 100,
-    left: -20,
-    width: "80%",
-    height: "80%",
-  },
-  userPreview: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 90,
-    height: 110,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  userPreviewImage: {
-    width: "100%",
-    height: "100%",
-  },
-  cameraOffOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Status pill
-  statusPill: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.85)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#5B5EA6",
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1A1A2E",
-  },
-
-  // Speech bubble
-  bubbleWrapper: {
-    position: "absolute",
-    bottom: 16,
-    left: 12,
-    right: 12,
-  },
-  bubble: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  bubbleText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1A1A2E",
-    lineHeight: 24,
-  },
-  speakerBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bubbleTail: {
-    width: 20,
-    height: 12,
-    backgroundColor: "#FFFFFF",
-    marginLeft: 24,
-    // CSS triangle trick — use borderRadius to fake a tail
-    borderBottomLeftRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-  },
-
-  // Controls
-  controls: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-  },
-  controlItem: {
-    alignItems: "center",
-    gap: 6,
-  },
-  controlBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F2F2F7",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  controlBtnActive: {
-    backgroundColor: "#EEF2FF",
-  },
-  endCallBtn: {
-    backgroundColor: "#EF4444",
-  },
-  controlLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-
-  // Feedback card
-  feedbackCard: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    paddingVertical: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  feedbackItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-  },
-  feedbackDivider: {
-    borderRightWidth: 1,
-    borderRightColor: "#E5E7EB",
-  },
-  feedbackLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#1A1A2E",
-  },
-  feedbackValue: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});

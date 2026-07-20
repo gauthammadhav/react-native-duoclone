@@ -12,6 +12,5 @@ if (!projectToken || !host) {
 export const posthog = new PostHog(projectToken, {
   host,
   captureAppLifecycleEvents: true,
-  flushAtAppHide: true,
   flushInterval: 3000, // flush every 3s instead of default 10-30s
 });
