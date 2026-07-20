@@ -96,6 +96,42 @@
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-upgrade/SKILL.md",
       "computedHash": "fef2ffa0de5ca6907d4525539077032e2da887e7054b2e7d48f6710fdc6856c9"
+    },
+    "stream": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream/SKILL.md",
+      "computedHash": "2548e3b4cdf04d7bb05fa2ee3b33d09d44ad9775cb56d1a6f7feaafba61baa22"
+    },
+    "stream-android": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-android/SKILL.md",
+      "computedHash": "252551d0e561ed3b6693b188381b3ec7140b391d910bc382bd33c616e910b173"
+    },
+    "stream-builder": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-builder/SKILL.md",
+      "computedHash": "7b2d909bda159687b02e5ed9f1d64b38563f9e1e112427ec2e1350974722e449"
+    },
+    "stream-docs": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-docs/SKILL.md",
+      "computedHash": "846d8823dc694c6dba84aac0bf24cb2fd33e11fea3ac4632c9a288cde022f67d"
+    },
+    "stream-react": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-react/SKILL.md",
+      "computedHash": "f37d6fda95f26ce98e493b51d3044637deceba0b97605175294756555aea91db"
+    },
+    "stream-react-native": {
+      "source": "GetStream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-react-native/SKILL.md",
+      "computedHash": "484d04eb4af766e9ed7fa3c1ed41a8645dc11abcb146ebc479161640b4ec3146"
     }
   }
 }
