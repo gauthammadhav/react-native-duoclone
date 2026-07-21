@@ -21,7 +21,10 @@ export async function POST(request: Request) {
     const userId = requestState.toAuth().userId;
 
     const body = await request.json();
-    const { lessonId, language } = body;
+    const { lessonId, language, goal, vocabulary, phrases, ai_teacher_prompt } = body;
+
+    if (!lessonId) {
+      return Response.json({ error: "Missing lessonId" }, { status: 400 });
     }
 
     const callId = `lesson-${lessonId}`;
@@ -31,10 +34,17 @@ export async function POST(request: Request) {
     await call.getOrCreate({
       data: {
         created_by_id: userId,
-        members: [{ user_id: userId }],
+        members: [
+          { user_id: userId },
+          { user_id: "ai-teacher", role: "admin" }
+        ],
         custom: {
           language: language || "en",
           lessonId,
+          goal: goal || "",
+          vocabulary: vocabulary || [],
+          phrases: phrases || [],
+          ai_teacher_prompt: ai_teacher_prompt || ""
         },
       },
     });
