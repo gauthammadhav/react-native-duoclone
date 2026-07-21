@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { images } from "@/constants/images";
 import { lessons } from "@/data/lessons";
 import { useLessonStore } from "@/store/lessonStore";
-import { useUser } from "@clerk/expo";
+import { useUser, useAuth } from "@clerk/expo";
 import {
   StreamCall,
   useStreamVideoClient,
@@ -41,8 +41,10 @@ export default function LessonScreen() {
   const router = useRouter();
   const lesson = lessons.find((l) => l.id === id);
   const { user } = useUser();
+  const { getToken } = useAuth();
   const client = useStreamVideoClient();
   const [call, setCall] = useState<Call>();
+  const [agentStatus, setAgentStatus] = useState<"idle" | "connecting" | "connected" | "failed">("idle");
 
   useEffect(() => {
     if (!lesson) {
@@ -58,13 +60,24 @@ export default function LessonScreen() {
 
     const initializeCall = async () => {
       try {
+        const clerkToken = await getToken();
+        
+        const aiVideoActivity = lesson.activities?.find((a: any) => a.type === 'ai_video_teacher') as any;
+        const aiTeacherPrompt = aiVideoActivity?.systemPrompt || '';
+
         const response = await fetch(getApiUrl("/api/stream/call"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${clerkToken}`
+          },
           body: JSON.stringify({ 
-            userId: user.id, 
             lessonId: lesson.id,
-            language: lesson.id.split("_")[0]
+            language: lesson.id.split("_")[0],
+            goal: lesson.goal,
+            vocabulary: lesson.vocabulary,
+            phrases: lesson.phrases,
+            ai_teacher_prompt: aiTeacherPrompt
           }),
         });
         
@@ -84,6 +97,27 @@ export default function LessonScreen() {
         
         // Default to mic enabled, camera disabled for audio lessons
         await c.camera.disable();
+
+        // Start the Vision Agent
+        try {
+          setAgentStatus("connecting");
+          const agentRes = await fetch(getApiUrl("/api/agent/start"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${clerkToken}`
+            },
+            body: JSON.stringify({ callId: data.callId })
+          });
+          if (agentRes.ok) {
+            setAgentStatus("connected");
+          } else {
+            setAgentStatus("failed");
+          }
+        } catch (startErr) {
+          console.error("Failed to start agent", startErr);
+          setAgentStatus("failed");
+        }
       } catch (err) {
         console.error("Failed to initialize call", err);
       }
@@ -113,12 +147,12 @@ export default function LessonScreen() {
 
   return (
     <StreamCall call={call}>
-      <ActiveCallUI lesson={lesson} />
+      <ActiveCallUI lesson={lesson} agentStatus={agentStatus} />
     </StreamCall>
   );
 }
 
-function ActiveCallUI({ lesson }: { lesson: any }) {
+function ActiveCallUI({ lesson, agentStatus }: { lesson: any, agentStatus: string }) {
   const router = useRouter();
   const { markCompleted } = useLessonStore();
   const call = useCall();
@@ -177,7 +211,10 @@ function ActiveCallUI({ lesson }: { lesson: any }) {
     };
   }, [teacherMessages.length]);
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    if (call) {
+      await call.endCall().catch(console.error);
+    }
     markCompleted(lesson.id);
     router.replace('/');
   };
@@ -202,6 +239,15 @@ function ActiveCallUI({ lesson }: { lesson: any }) {
   } else if (callingState === CallingState.RECONNECTING) {
     statusText = "Reconnecting...";
     statusColor = "bg-[#FBBF24]";
+  } else if (agentStatus === "connecting") {
+    statusText = "Agent Connecting...";
+    statusColor = "bg-[#FBBF24]";
+  } else if (agentStatus === "failed") {
+    statusText = "Agent Failed";
+    statusColor = "bg-[#EF4444]";
+  } else if (agentStatus === "idle") {
+    statusText = "Waiting for Agent...";
+    statusColor = "bg-[#9CA3AF]";
   } else if (!micEnabled) {
     statusText = "Muted";
     statusColor = "bg-[#EF4444]";
