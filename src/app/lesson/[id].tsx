@@ -183,7 +183,7 @@ export default function LessonScreen() {
   );
 }
 
-function ActiveCallUI({ lesson, agentStatus, teacherMessages }: { lesson: any, agentStatus: string, teacherMessages: string[] }) {
+function ActiveCallUI({ lesson, agentStatus, teacherMessages }: { lesson: typeof lessons[0], agentStatus: string, teacherMessages: string[] }) {
   const router = useRouter();
   const { markCompleted } = useLessonStore();
   const call = useCall();
