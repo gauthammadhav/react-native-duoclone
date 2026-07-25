@@ -22,14 +22,42 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs):
     try:
         call_response = await call.get()
         custom = getattr(call_response.call, "custom", {})
-    except Exception:
+        if not custom and isinstance(call_response.call, dict):
+            custom = call_response.call.get("custom", {})
+    except Exception as e:
+        print(f"Error fetching call custom data: {e}")
         custom = {}
         
-    ai_prompt = custom.get("ai_teacher_prompt", "You are an AI language teacher.")
-    language = custom.get("language", "en")
+    print("Retrieved custom data:", custom)
+        
+    ai_prompt = custom.get("ai_teacher_prompt", "")
+    if not ai_prompt:
+        ai_prompt = "You are an AI language teacher."
+        
+    lang_code = custom.get("language", "en")
+    
+    LANG_MAP = {
+        "es": "Spanish", "fr": "French", "ja": "Japanese",
+        "de": "German", "it": "Italian", "ko": "Korean",
+        "zh": "Chinese", "pt": "Portuguese", "en": "English"
+    }
+    language = LANG_MAP.get(lang_code, lang_code)
+    
     goal = custom.get("goal", "")
-    vocabulary = custom.get("vocabulary", [])
-    phrases = custom.get("phrases", [])
+    
+    # Format vocabulary and phrases gracefully
+    vocab_list = custom.get("vocabulary", [])
+    if isinstance(vocab_list, list) and len(vocab_list) > 0 and isinstance(vocab_list[0], dict):
+        vocabulary = ", ".join([f"{v.get('word', '')} ({v.get('translation', '')})" for v in vocab_list])
+    else:
+        vocabulary = str(vocab_list)
+        
+    phrase_list = custom.get("phrases", [])
+    if isinstance(phrase_list, list) and len(phrase_list) > 0 and isinstance(phrase_list[0], dict):
+        phrases = ", ".join([f"{p.get('phrase', '')} ({p.get('translation', '')})" for p in phrase_list])
+    else:
+        phrases = str(phrase_list)
+
     script = custom.get("script", [])
     
     script_text = "\n".join([f"{i+1}. {msg}" for i, msg in enumerate(script)]) if script else ""

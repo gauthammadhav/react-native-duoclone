@@ -113,7 +113,9 @@ export default function LessonScreen() {
         });
         
         if (!response.ok) {
-          throw new Error(`Failed to create call: ${response.statusText}`);
+          const errText = await response.text();
+          console.error("API response text:", errText);
+          throw new Error(`Failed to create call: ${response.statusText} - ${errText}`);
         }
         
         const data = await response.json();
@@ -178,38 +180,24 @@ export default function LessonScreen() {
 
   return (
     <StreamCall call={call}>
-      <ActiveCallUI lesson={lesson} agentStatus={agentStatus} teacherMessages={teacherMessages} />
+      <ActiveCallUI lesson={lesson} agentStatus={agentStatus} />
     </StreamCall>
   );
 }
 
-function ActiveCallUI({ lesson, agentStatus, teacherMessages }: { lesson: typeof lessons[0], agentStatus: string, teacherMessages: string[] }) {
+function ActiveCallUI({ lesson, agentStatus }: { lesson: typeof lessons[0], agentStatus: string }) {
   const router = useRouter();
   const { markCompleted } = useLessonStore();
   const call = useCall();
-  const { useCallCallingState, useMicrophoneState } = useCallStateHooks();
+  const { useCallCallingState, useMicrophoneState, useCallClosedCaptions } = useCallStateHooks();
   
   const callingState = useCallCallingState();
   const { status: micStatus, isSpeakingWhileMuted } = useMicrophoneState();
+  const closedCaptions = useCallClosedCaptions();
 
   const micEnabled = micStatus === "enabled";
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
-
-  const [messageIndex, setMessageIndex] = useState(0);
-  const currentMessage = teacherMessages[messageIndex];
-
-  const handleNextMessage = () => {
-    if (messageIndex < teacherMessages.length - 1) {
-      setMessageIndex(i => i + 1);
-    }
-  };
-
-  const handlePrevMessage = () => {
-    if (messageIndex > 0) {
-      setMessageIndex(i => i - 1);
-    }
-  };
 
   const handleEndCall = async () => {
     if (call) {
@@ -315,46 +303,28 @@ function ActiveCallUI({ lesson, agentStatus, teacherMessages }: { lesson: typeof
             )}
           </View>
 
-          {/* Speech Bubble */}
-          {subtitlesEnabled && (
+          {/* Speech Bubble / Closed Captions */}
+          {subtitlesEnabled && closedCaptions.length > 0 && (
             <View className="absolute bottom-[115px] left-4 right-4 items-center">
               {/* Tail */}
               <View 
                 className="w-5 h-5 bg-white absolute -bottom-2 right-[60px] rounded-[3px] shadow-sm" 
                 style={{ transform: [{ rotate: '45deg' }] }} 
               />
-              <View className="bg-white rounded-[20px] p-4 shadow-lg w-full">
-                <View className="flex-row items-center">
-                  <View className="flex-1 pl-2">
-                    <Text className="text-[17px] font-medium text-[#1F2937] leading-[26px]">
-                      {currentMessage}
-                    </Text>
-                  </View>
-                  <Pressable className="w-11 h-11 items-center justify-center ml-2 active:opacity-70">
-                    <Volume2 size={24} color="#4F46E5" strokeWidth={2.5} />
-                  </Pressable>
-                </View>
-                
-                {/* Manual Navigation Controls */}
-                <View className="flex-row justify-between items-center mt-3 pt-3 border-t border-[#F3F4F6]">
-                  <Pressable 
-                    onPress={handlePrevMessage}
-                    disabled={messageIndex === 0}
-                    className={`px-3 py-1.5 rounded-full ${messageIndex === 0 ? 'opacity-30' : 'bg-[#F3F4F6] active:opacity-70'}`}
-                  >
-                    <Text className="text-[14px] font-semibold text-[#4B5563]">Prev</Text>
-                  </Pressable>
-                  <Text className="text-[13px] font-medium text-[#9CA3AF]">
-                    {messageIndex + 1} / {teacherMessages.length}
-                  </Text>
-                  <Pressable 
-                    onPress={handleNextMessage}
-                    disabled={messageIndex === teacherMessages.length - 1}
-                    className={`px-3 py-1.5 rounded-full ${messageIndex === teacherMessages.length - 1 ? 'opacity-30' : 'bg-[#4F46E5] active:opacity-80'}`}
-                  >
-                    <Text className="text-[14px] font-semibold text-white">Next</Text>
-                  </Pressable>
-                </View>
+              <View className="bg-white rounded-[20px] p-4 shadow-lg w-full gap-2">
+                {closedCaptions.map(({ user, start_time, text }) => {
+                  const isAgent = user?.id === "ai-teacher";
+                  return (
+                    <View key={`${user?.id}/${start_time}`} className="flex-row items-start">
+                      <Text className={`text-[15px] font-bold mr-2 ${isAgent ? 'text-[#4F46E5]' : 'text-[#58CC02]'}`}>
+                        {isAgent ? "Teacher:" : "You:"}
+                      </Text>
+                      <Text className="text-[16px] font-medium text-[#1F2937] leading-[24px] flex-1">
+                        {text}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             </View>
           )}

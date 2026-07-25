@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing or invalid lessonId" }, { status: 400 });
     }
 
+    const isArray = (arr: unknown): arr is any[] => Array.isArray(arr);
     const isStringArray = (arr: unknown): arr is string[] => 
       Array.isArray(arr) && arr.every(item => typeof item === "string");
 
@@ -39,13 +40,10 @@ export async function POST(request: Request) {
     if (goal !== undefined && typeof goal !== "string") return Response.json({ error: "Invalid goal" }, { status: 400 });
     if (ai_teacher_prompt !== undefined && typeof ai_teacher_prompt !== "string") return Response.json({ error: "Invalid ai_teacher_prompt" }, { status: 400 });
     
-    if (vocabulary !== undefined && !isStringArray(vocabulary)) return Response.json({ error: "Invalid vocabulary" }, { status: 400 });
-    if (phrases !== undefined && !isStringArray(phrases)) return Response.json({ error: "Invalid phrases" }, { status: 400 });
-    if (script !== undefined && !isStringArray(script)) return Response.json({ error: "Invalid script" }, { status: 400 });
+    // We allow vocabulary, phrases, and script to be passed through directly to Stream custom data.
 
-    const callId = `lesson-v2-${userId}-${lessonId}`;
+    const callId = `lesson-v2-${userId}-${lessonId}-${Date.now()}`;
     
-    // Create the call server-side
     const call = stream.video.call("audio_room", callId);
     await call.getOrCreate({
       data: {
@@ -54,19 +52,22 @@ export async function POST(request: Request) {
           { user_id: userId },
           { user_id: "ai-teacher", role: "admin" }
         ],
-      },
-    });
-
-    // Explicitly update custom data to ensure it overrides any cached version
-    await call.update({
-      custom: {
-        language: language || "en",
-        lessonId,
-        goal: goal || "",
-        vocabulary: vocabulary || [],
-        phrases: phrases || [],
-        ai_teacher_prompt: ai_teacher_prompt || "",
-        script: script || []
+        custom: {
+          language: language || "en",
+          lessonId,
+          goal: goal || "",
+          vocabulary: vocabulary || [],
+          phrases: phrases || [],
+          ai_teacher_prompt: ai_teacher_prompt || "",
+          script: script || []
+        },
+        settings_override: {
+          transcription: {
+            mode: "auto-on",
+            closed_caption_mode: "auto-on",
+            language: language || "en",
+          }
+        }
       },
     });
 
@@ -78,8 +79,8 @@ export async function POST(request: Request) {
     });
 
     return Response.json({ callId });
-  } catch (error) {
-    console.error("Stream call API error:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Stream call API error details:", error?.response?.data || error);
+    return Response.json({ error: "Internal server error", details: error?.message }, { status: 500 });
   }
 }
