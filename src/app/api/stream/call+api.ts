@@ -21,13 +21,13 @@ export async function POST(request: Request) {
     const userId = requestState.toAuth().userId;
 
     const body = await request.json();
-    const { lessonId, language, goal, vocabulary, phrases, ai_teacher_prompt } = body;
+    const { lessonId, language, goal, vocabulary, phrases, ai_teacher_prompt, script } = body;
 
     if (!lessonId) {
       return Response.json({ error: "Missing lessonId" }, { status: 400 });
     }
 
-    const callId = `lesson-${lessonId}`;
+    const callId = `lesson-v2-${lessonId}`;
     
     // Create the call server-side
     const call = stream.video.call("audio_room", callId);
@@ -38,15 +38,27 @@ export async function POST(request: Request) {
           { user_id: userId },
           { user_id: "ai-teacher", role: "admin" }
         ],
-        custom: {
-          language: language || "en",
-          lessonId,
-          goal: goal || "",
-          vocabulary: vocabulary || [],
-          phrases: phrases || [],
-          ai_teacher_prompt: ai_teacher_prompt || ""
-        },
       },
+    });
+
+    // Explicitly update custom data to ensure it overrides any cached version
+    await call.update({
+      custom: {
+        language: language || "en",
+        lessonId,
+        goal: goal || "",
+        vocabulary: vocabulary || [],
+        phrases: phrases || [],
+        ai_teacher_prompt: ai_teacher_prompt || "",
+        script: script || []
+      },
+    });
+
+    // Ensure the AI teacher has the admin role even if the call already existed
+    await call.updateCallMembers({
+      update_members: [
+        { user_id: "ai-teacher", role: "admin" }
+      ]
     });
 
     return Response.json({ callId });

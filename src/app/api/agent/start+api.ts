@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing callId" }, { status: 400 });
     }
 
-    const baseUrl = (process.env.AGENT_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
+    const baseUrl = (process.env.AGENT_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
     const agentServerUrl = `${baseUrl}/calls/${callId}/sessions`;
     
     // Ping the vision agent local HTTP server
