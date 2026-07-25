@@ -1,56 +1,100 @@
-# Welcome to your Expo app 👋
+# AI Language Tutor (Duolingo Clone)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern, interactive AI-powered language learning application inspired by Duolingo. Built with Expo, React Native, and Tailwind CSS (NativeWind v5), it integrates real-time AI agents to act as your personal language teacher.
 
-## Get started
+## Features 🚀
 
-1. Install dependencies
+- **Interactive AI Teacher**: Real-time voice and video conversations using [Stream Edge](https://getstream.io/) and [Vision Agents SDK](https://github.com/getstream/vision-agent). The AI listens to you and helps with grammar, vocabulary, and pronunciation.
+- **Language Selection & Onboarding**: Smooth onboarding flow to choose your target language.
+- **Structured Lessons System**: Progress through structured units and lessons with vocabulary, grammar, and speaking practice.
+- **Authentication**: Secure and seamless sign-up/sign-in flows powered by [Clerk](https://clerk.com/).
+- **Beautiful Mobile-First UI**: A pixel-perfect, engaging, and playful design system built with NativeWind v5 and Lucide Icons.
+- **Progress Tracking**: Track your day streak, total XP, and league rankings directly in your profile.
+- **Analytics Integration**: Built-in event tracking using [PostHog](https://posthog.com/).
 
-   ```bash
-   npm install
-   ```
+## Tech Stack 🛠️
 
-2. Start the app
+- **Framework**: Expo / React Native
+- **Language**: TypeScript
+- **Styling**: NativeWind v5 (Tailwind CSS for React Native)
+- **State Management**: Zustand & AsyncStorage for persistence
+- **Authentication**: Clerk
+- **AI & Video Communication**: Stream Video React Native SDK & Vision Agents Python SDK
+- **Analytics**: PostHog React Native
 
-   ```bash
-   npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### 1. Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js (v18+)
+- Python (v3.9+) for running the Vision Agent service.
+- Android Studio or Xcode (if you plan to run on emulators/simulators).
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 2. Install Dependencies
 
-## Get a fresh project
-
-When you're ready, run:
-
+Install the Expo app dependencies:
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Set up the Vision Agent (Python environment):
+```bash
+cd vision-agent
+python -m venv venv
+# Windows
+.\venv\Scripts\activate
+# Mac/Linux
+source venv/bin/activate
+pip install -r requirements.txt
+cd ..
+```
 
-### Other setup steps
+### 3. Environment Variables
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Create a `.env` file in the root of the project and populate it with your keys:
 
-## Learn more
+```env
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
 
-To learn more about developing your project with Expo, look at the following resources:
+EXPO_PUBLIC_STREAM_API_KEY=your_stream_api_key
+STREAM_API_SECRET=your_stream_secret_key
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+EXPO_PUBLIC_POSTHOG_HOST=your_posthog_host
+EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN=your_posthog_project_token
+```
 
-## Join the community
+Create a `.env` file in the `vision-agent/` directory:
+```env
+STREAM_API_KEY=your_stream_api_key
+STREAM_API_SECRET=your_stream_secret_key
+OPENAI_API_KEY=your_openai_api_key
+```
 
-Join our community of developers creating universal apps.
+### 4. Running the App
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Start the AI Teacher service (in a separate terminal):
+```bash
+cd vision-agent
+# Activate your venv if not already active
+python agent.py serve
+```
+
+Start the Expo bundler:
+```bash
+npm start
+```
+From the Expo CLI, press `a` to open the app on an Android emulator, or `i` for iOS.
+
+## Project Structure
+
+- `src/app/` - Expo Router screens and navigation
+- `src/components/` - Reusable UI components
+- `src/constants/` - Centralized assets and configurations
+- `src/data/` - Hardcoded lesson content, activities, and languages
+- `src/store/` - Zustand global state stores
+- `src/tw/` - NativeWind styled utility components
+- `vision-agent/` - Python backend service for the AI voice teacher
+
+## License
+MIT License
